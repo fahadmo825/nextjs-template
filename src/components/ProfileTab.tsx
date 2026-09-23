@@ -1,12 +1,18 @@
 'use client';
 
-import { Check, ChevronRight, Copy, ShieldCheck, Volume2, VolumeX } from 'lucide-react';
-import { useState } from 'react';
+import { Check, Copy, Link2, WalletCards } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { initData, useSignal } from '@tma.js/sdk-react';
+import type { UserRecord } from '@/lib/mining';
 
-export function ProfileTab() {
-  const user = useSignal(initData.user);
-  const [muted, setMuted] = useState(false);
-  const userId = user?.id ? String(user.id) : 'Local preview';
-  return <section className="tab-content"><div className="profile-head"><div className="avatar">{user?.first_name?.[0] || 'A'}</div><div><span className="eyebrow">ACCOUNT</span><h1>{user?.first_name || 'ATF Miner'}</h1><p><span className="verified-dot" /> Unverified account</p></div><button className="icon-button"><Copy size={17} /></button></div><div className="profile-card"><div className="profile-line"><span>Telegram User ID</span><strong>{userId}</strong></div><div className="profile-line"><span>Verification</span><strong className="warning-text">Unverified <ChevronRight size={16} /></strong></div></div><span className="eyebrow section-label">ASSETS BREAKDOWN</span><div className="assets-card"><div><span>Total assets</span><strong>12,480.00 <small>ATF</small></strong></div><div><span>Holding wallet</span><strong>8,940.00 <small>ATF</small></strong></div><div><span>Pool wallet</span><strong>3,540.00 <small>ATF</small></strong></div></div><span className="eyebrow section-label">PREFERENCES</span><div className="settings-card"><button className="setting-row" onClick={() => setMuted(!muted)}><span className="setting-icon">{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</span><span><strong>Sound effects</strong><small>{muted ? 'Muted' : 'Unmute'}</small></span><span className={`toggle ${!muted ? 'on' : ''}`}><i /></span></button><div className="setting-row"><span className="setting-icon"><ShieldCheck size={18} /></span><span><strong>Security status</strong><small>Protect your account</small></span><ChevronRight size={17} /></div></div><div className="verified-note"><Check size={17} /><span>Verify your Telegram account to unlock higher limits.</span></div></section>;
+type ProfileTabProps = { user: UserRecord | null; onSaveWallet: (address: string) => Promise<void>; savingWallet: boolean };
+
+export function ProfileTab({ user, onSaveWallet, savingWallet }: ProfileTabProps) {
+  const telegramUser = useSignal(initData.user);
+  const [wallet, setWallet] = useState(user?.walletAddress ?? '');
+  const [saved, setSaved] = useState(false);
+  useEffect(() => setWallet(user?.walletAddress ?? ''), [user?.walletAddress]);
+  const userId = telegramUser?.id ? String(telegramUser.id) : user?.telegramId || 'Local preview';
+  const saveWallet = async () => { await onSaveWallet(wallet); setSaved(true); window.setTimeout(() => setSaved(false), 1800); };
+  return <section className="tab-content"><div className="profile-head"><div className="avatar">{telegramUser?.first_name?.[0] || 'A'}</div><div><span className="eyebrow">ACCOUNT</span><h1>{telegramUser?.first_name || user?.username || 'AGENB Miner'}</h1><p><span className="verified-dot" /> Unverified account</p></div><button className="icon-button" aria-label="Copy Telegram ID" onClick={() => navigator.clipboard?.writeText(userId)}><Copy size={17} /></button></div><div className="profile-card"><div className="profile-line"><span>Telegram User ID</span><strong>{userId}</strong></div><div className="profile-line"><span>Verification</span><strong className="warning-text">Unverified</strong></div></div><span className="eyebrow section-label">ASSETS BREAKDOWN</span><div className="assets-card"><div><span>Total assets</span><strong>{(user?.balance ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} <small>AGENB</small></strong></div><div><span>Holding wallet</span><strong>{(user?.balance ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} <small>AGENB</small></strong></div><div><span>Pool wallet</span><strong>0.00 <small>AGENB</small></strong></div></div><span className="eyebrow section-label">WALLET & WITHDRAWAL</span><div className="wallet-panel"><div className="wallet-panel-title"><WalletCards size={19} /><div><strong>Connect Wallet</strong><small>Save your TON or crypto wallet address</small></div></div><input value={wallet} onChange={(event) => setWallet(event.target.value)} placeholder="Enter wallet address" aria-label="Wallet address" /><button className="primary-button" disabled={savingWallet || !wallet.trim()} onClick={saveWallet}>{saved ? <><Check size={15} /> Saved</> : savingWallet ? 'SAVING...' : <><Link2 size={15} /> Save wallet</>}</button>{user?.walletAddress && <small className="saved-address">Saved: {user.walletAddress}</small>}</div><div className="withdraw-panel"><div><strong>Withdraw AGENB</strong><span>Withdrawals will be available soon.</span></div><span className="soon-badge">Soon / قريباً</span></div></section>;
 }
