@@ -3,9 +3,47 @@
 import { Check, Lock, TrendingUp, Zap } from 'lucide-react';
 import type { UserData } from '@/hooks/useUserData';
 import { MINING_LEVELS, type MiningLevel } from '@/lib/mining';
-type MinersTabProps = { onWatch: () => void; canWatch: boolean; user: UserData | null; onUpgrade: (level: MiningLevel) => Promise<void> };
 
-export function MinersTab({ onWatch, canWatch, user, onUpgrade }: MinersTabProps) {
+type MinersTabProps = {
+  onWatch: () => void;
+  canWatch: boolean;
+  user: UserData | null;
+  onUpgrade: (level: MiningLevel) => Promise<void>;
+};
+
+export function MinersTab({ user, onUpgrade }: MinersTabProps) {
   const currentLevel = user?.miningLevel ?? 1;
-  return <section className="tab-content"><div className="page-heading"><span className="eyebrow">HARDWARE STORE</span><h1>Scale your mine</h1><p>Upgrade your rig to increase your passive AGENB output.</p></div><div className="chart-card"><div className="chart-top"><div><span className="muted-label">PNL GROWTH</span><strong>LIVE</strong></div><span className="chart-period">MINING RATE</span></div><svg className="growth-chart" viewBox="0 0 600 170" preserveAspectRatio="none" aria-label="PNL growth chart"><path className="chart-fill" d="M0 150 C60 142, 75 120, 130 128 S190 80, 240 105 S300 68, 345 80 S400 42, 450 62 S520 18, 600 24 L600 170 L0 170Z" /><path className="chart-line" d="M0 150 C60 142, 75 120, 130 128 S190 80, 240 105 S300 68, 345 80 S400 42, 450 62 S520 18, 600 24" /></svg><div className="chart-axis"><span>LEVEL 1</span><span>LEVEL {currentLevel}</span><span>LEVEL 5</span></div></div><div className="section-heading"><div><span className="eyebrow">5 MODELS</span><h2>Hardware upgrades</h2></div><TrendingUp size={20} /></div><div className="miner-grid">{MINING_LEVELS.map((miner) => { const active = miner.level === currentLevel; const unlocked = miner.level <= currentLevel; const nextLevel = miner.level === currentLevel + 1; return <div className={`miner-card ${active ? 'active' : ''}`} key={miner.level}><div className="miner-title"><span>LVL {miner.level}</span>{active ? <span className="status-pill"><Check size={12} /> ACTIVE</span> : !unlocked && <Lock size={16} />}</div><strong>{miner.name}</strong><div className="hash-rate"><Zap size={14} /> {miner.speedPerHour} AGENB/hour</div>{active ? <small>Currently mining</small> : unlocked ? <small>Unlocked</small> : <><small>Upgrade for {miner.upgradeCost.toLocaleString()} AGENB</small><button className="upgrade-button" disabled={!nextLevel} onClick={() => void onUpgrade(miner.level as MiningLevel)}>{miner.upgradeCost.toLocaleString()} <span>{nextLevel ? 'AGENB · UPGRADE' : 'LOCKED'}</span></button></>}</div>; })}</div><button className="boost-panel compact" onClick={onWatch} disabled={!canWatch}><div className="boost-icon"><Zap size={18} /></div><div><strong>Power boost</strong><span>Watch an ad to mine faster</span></div><span className="arrow-mark">→</span></button></section>;
+
+  return (
+    <section className="tab-content">
+      <div className="page-heading">
+        <span className="eyebrow">HARDWARE STORE</span>
+        <h1>Scale your mine</h1>
+        <p>Upgrade your rig to increase your passive AGENB output.</p>
+      </div>
+      <div className="chart-card">
+        <div className="chart-top"><div><span className="muted-label">PNL GROWTH</span><strong>LIVE</strong></div><span className="chart-period">MINING RATE</span></div>
+        <svg className="growth-chart" viewBox="0 0 600 170" preserveAspectRatio="none" aria-label="PNL growth chart"><path className="chart-fill" d="M0 150 C60 142, 75 120, 130 128 S190 80, 240 105 S300 68, 345 80 S400 42, 450 62 S520 18, 600 24 L600 170 L0 170Z" /><path className="chart-line" d="M0 150 C60 142, 75 120, 130 128 S190 80, 240 105 S300 68, 345 80 S400 42, 450 62 S520 18, 600 24" /></svg>
+        <div className="chart-axis"><span>LEVEL 1</span><span>LEVEL {currentLevel}</span><span>LEVEL 12</span></div>
+      </div>
+      <div className="section-heading"><div><span className="eyebrow">12 MODELS</span><h2>Hardware upgrades</h2></div><TrendingUp size={20} /></div>
+      <div className="miner-grid">
+        {MINING_LEVELS.map((miner) => {
+          const active = miner.level === currentLevel;
+          const unlocked = miner.level <= currentLevel;
+          const nextLevel = miner.level === currentLevel + 1;
+          return <div className={`miner-card ${active ? 'active' : ''}`} key={miner.level}>
+            <div className="miner-title"><span>LVL {miner.level}</span>{active ? <span className="status-pill"><Check size={12} /> ACTIVE</span> : !unlocked && <Lock size={16} />}</div>
+            <strong>{miner.name}</strong>
+            <div className="hash-rate"><Zap size={14} /> {miner.hashrateThs.toFixed(2)} TH/s</div>
+            <small>{miner.speedPerHour} AGENB/hour</small>
+            {active ? <small>Currently mining</small> : unlocked ? <small>Unlocked</small> : <>
+              <small>Upgrade for {miner.upgradeCost.toLocaleString()} AGENB</small>
+              <button className="upgrade-button" disabled={!nextLevel} onClick={() => void onUpgrade(miner.level)}>{miner.upgradeCost.toLocaleString()} <span>{nextLevel ? 'AGENB · UPGRADE' : 'LOCKED'}</span></button>
+            </>}
+          </div>;
+        })}
+      </div>
+    </section>
+  );
 }

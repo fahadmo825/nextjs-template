@@ -23,8 +23,8 @@ export async function GET(request: Request) {
     await ensureUsersTable();
     const username = new URL(request.url).searchParams.get('username');
     const rows = await sql!`
-      INSERT INTO users (telegram_id, username)
-      VALUES (${telegramId}, ${username})
+      INSERT INTO users (telegram_id, username, mining_level)
+      VALUES (${telegramId}, ${username}, 1)
       ON CONFLICT (telegram_id) DO UPDATE SET username = COALESCE(EXCLUDED.username, users.username)
       RETURNING telegram_id, username, balance::text, mining_level, last_claim_time, wallet_address, created_at
     `;
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     }
     if (body.action === 'upgrade') {
       const requestedLevel = body.level;
-      if (typeof requestedLevel !== 'number' || !Number.isInteger(requestedLevel) || requestedLevel < 2 || requestedLevel > 5) return errorResponse('Invalid mining level');
+      if (typeof requestedLevel !== 'number' || !Number.isInteger(requestedLevel) || requestedLevel < 2 || requestedLevel > 12) return errorResponse('Invalid mining level');
       const target = getMiningLevel(requestedLevel);
       const rows = await sql!`
         UPDATE users SET balance = balance - ${target.upgradeCost}, mining_level = ${requestedLevel}
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     const now = Date.now();
     const rows = await sql!`
       UPDATE users
-      SET balance = balance + (((${now}::BIGINT - last_claim_time)::NUMERIC / 3600000) * CASE mining_level WHEN 1 THEN 10 WHEN 2 THEN 25 WHEN 3 THEN 60 WHEN 4 THEN 150 WHEN 5 THEN 400 ELSE 10 END), last_claim_time = ${now}
+      SET balance = balance + (((${now}::BIGINT - last_claim_time)::NUMERIC / 3600000) * CASE mining_level WHEN 1 THEN 10 WHEN 2 THEN 10 WHEN 3 THEN 10 WHEN 4 THEN 10 WHEN 5 THEN 10 WHEN 6 THEN 10 WHEN 7 THEN 11 WHEN 8 THEN 11 WHEN 9 THEN 11 WHEN 10 THEN 11 WHEN 11 THEN 11 WHEN 12 THEN 12 ELSE 10 END), last_claim_time = ${now}
       WHERE telegram_id = ${body.telegramId}
       RETURNING balance::text, mining_level, last_claim_time
     `;

@@ -1,18 +1,26 @@
-export type MiningLevel = 1 | 2 | 3 | 4 | 5;
+export type MiningLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export type MiningLevelConfig = {
   level: MiningLevel;
   name: string;
   upgradeCost: number;
+  hashrateThs: number;
   speedPerHour: number;
 };
 
 export const MINING_LEVELS: MiningLevelConfig[] = [
-  { level: 1, name: 'Basic Miner', upgradeCost: 0, speedPerHour: 10 },
-  { level: 2, name: 'Advanced Miner', upgradeCost: 500, speedPerHour: 25 },
-  { level: 3, name: 'Pro Rig', upgradeCost: 2000, speedPerHour: 60 },
-  { level: 4, name: 'Super Node', upgradeCost: 5000, speedPerHour: 150 },
-  { level: 5, name: 'Quantum Node', upgradeCost: 15000, speedPerHour: 400 },
+  { level: 1, name: 'Basic Miner', upgradeCost: 0, hashrateThs: 0.10, speedPerHour: 10 },
+  { level: 2, name: 'Advanced Miner', upgradeCost: 100, hashrateThs: 0.10, speedPerHour: 10 },
+  { level: 3, name: 'Pro Rig', upgradeCost: 2000, hashrateThs: 0.10, speedPerHour: 10 },
+  { level: 4, name: 'Super Node', upgradeCost: 5000, hashrateThs: 0.10, speedPerHour: 10 },
+  { level: 5, name: 'Quantum Node', upgradeCost: 15000, hashrateThs: 0.10, speedPerHour: 10 },
+  { level: 6, name: 'Hyper Node', upgradeCost: 25000, hashrateThs: 0.10, speedPerHour: 10 },
+  { level: 7, name: 'Apex Rig', upgradeCost: 40000, hashrateThs: 0.11, speedPerHour: 11 },
+  { level: 8, name: 'Nova Rig', upgradeCost: 60000, hashrateThs: 0.11, speedPerHour: 11 },
+  { level: 9, name: 'Titan Node', upgradeCost: 85000, hashrateThs: 0.11, speedPerHour: 11 },
+  { level: 10, name: 'Orbit Node', upgradeCost: 115000, hashrateThs: 0.11, speedPerHour: 11 },
+  { level: 11, name: 'Fusion Node', upgradeCost: 150000, hashrateThs: 0.11, speedPerHour: 11 },
+  { level: 12, name: 'Quantum Core', upgradeCost: 200000, hashrateThs: 0.12, speedPerHour: 12 },
 ];
 
 export function getMiningLevel(level: number): MiningLevelConfig {
