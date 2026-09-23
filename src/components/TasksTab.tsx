@@ -1,0 +1,8 @@
+'use client';
+
+import { Check, ExternalLink, Play, Sparkles } from 'lucide-react';
+type TasksTabProps = { onWatch: () => void; canWatch: boolean };
+
+export function TasksTab({ onWatch, canWatch }: TasksTabProps) {
+  return <section className="tab-content"><div className="page-heading"><span className="eyebrow">EARN MORE</span><h1>Daily missions</h1><p>Complete simple actions and turn momentum into ATF.</p></div><div className="progress-line"><span>Today&apos;s progress</span><strong>2 / 4 completed</strong><div><i style={{ width: '50%' }} /></div></div><div className="task-list"><div className="task-row done"><span className="task-symbol"><Check size={18} /></span><div><strong>Welcome to the network</strong><small>Account created</small></div><b>+50 ATF</b></div><div className="task-row done"><span className="task-symbol"><Check size={18} /></span><div><strong>Connect your wallet</strong><small>Wallet linked</small></div><b>+100 ATF</b></div><div className="task-row"><span className="task-symbol task-play"><Play size={16} fill="currentColor" /></span><div><strong>Watch a reward ad</strong><small>Daily reward</small></div><button className="claim-button" onClick={onWatch} disabled={!canWatch}>{canWatch ? 'Watch' : 'Locked'}</button></div><div className="task-row"><span className="task-symbol task-external"><ExternalLink size={17} /></span><div><strong>Follow ATF on Telegram</strong><small>Join the community</small></div><button className="claim-button">+100</button></div></div><div className="streak-card"><Sparkles size={21} /><div><strong>3 day streak</strong><span>Keep going to unlock a bonus</span></div><div className="streak-dots"><i /><i /><i /><i /><i /><i /><i /></div></div></section>;
+}
