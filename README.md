@@ -22,6 +22,22 @@ dependencies using the command:
 pnpm install
 ```
 
+## Database Configuration
+
+The mining account and claim system use Neon PostgreSQL. Copy `.env.example` to
+`.env.local` and set `DATABASE_URL` to the Neon connection string from your
+deployment secret manager. Set `TELEGRAM_BOT_TOKEN` as well so production API
+requests can verify Telegram's signed `initData`. Never commit `.env.local` or
+expose either secret to the browser. The `users` table is initialized
+automatically on the first API request.
+
+The API is available at `/api/user`:
+
+- `GET ?telegram_id=...` creates or loads an account.
+- `POST { "action": "claim", "telegramId": "..." }` claims accumulated AGENB.
+- `POST { "action": "wallet", "telegramId": "...", "walletAddress": "..." }` saves a wallet.
+- `POST { "action": "upgrade", "telegramId": "...", "level": 2 }` upgrades the next mining level.
+
 ## Scripts
 
 This project contains the following scripts:

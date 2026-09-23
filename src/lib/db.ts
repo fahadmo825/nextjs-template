@@ -1,24 +1,23 @@
 import { neon } from '@neondatabase/serverless';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is required to use the mining API');
-}
+const connectionString = process.env.DATABASE_URL;
 
-export const sql = neon(process.env.DATABASE_URL);
+export const sql = connectionString ? neon(connectionString) : null;
 
-let schemaPromise: Promise<unknown> | undefined;
+export async function ensureUsersTable() {
+  if (!sql) {
+    throw new Error('DATABASE_URL is not configured');
+  }
 
-export function ensureSchema() {
-  schemaPromise ??= sql`
+  await sql`
     CREATE TABLE IF NOT EXISTS users (
       telegram_id VARCHAR PRIMARY KEY,
       username VARCHAR,
-      balance NUMERIC DEFAULT 0,
-      mining_level INT DEFAULT 1,
-      last_claim_time BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
-      wallet_address VARCHAR DEFAULT '',
-      created_at TIMESTAMP DEFAULT NOW()
+      balance NUMERIC NOT NULL DEFAULT 0,
+      mining_level INT NOT NULL DEFAULT 1,
+      last_claim_time BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
+      wallet_address VARCHAR NOT NULL DEFAULT '',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `;
-  return schemaPromise;
 }
