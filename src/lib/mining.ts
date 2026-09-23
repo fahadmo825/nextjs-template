@@ -9,18 +9,18 @@ export type MiningLevelConfig = {
 };
 
 export const MINING_LEVELS: MiningLevelConfig[] = [
-  { level: 1, name: 'Basic Miner', upgradeCost: 0, hashrateThs: 0.10, speedPerHour: 10 },
-  { level: 2, name: 'Advanced Miner', upgradeCost: 100, hashrateThs: 0.10, speedPerHour: 10 },
-  { level: 3, name: 'Pro Rig', upgradeCost: 2000, hashrateThs: 0.10, speedPerHour: 10 },
-  { level: 4, name: 'Super Node', upgradeCost: 5000, hashrateThs: 0.10, speedPerHour: 10 },
-  { level: 5, name: 'Quantum Node', upgradeCost: 15000, hashrateThs: 0.10, speedPerHour: 10 },
-  { level: 6, name: 'Hyper Node', upgradeCost: 25000, hashrateThs: 0.10, speedPerHour: 10 },
-  { level: 7, name: 'Apex Rig', upgradeCost: 40000, hashrateThs: 0.11, speedPerHour: 11 },
-  { level: 8, name: 'Nova Rig', upgradeCost: 60000, hashrateThs: 0.11, speedPerHour: 11 },
-  { level: 9, name: 'Titan Node', upgradeCost: 85000, hashrateThs: 0.11, speedPerHour: 11 },
-  { level: 10, name: 'Orbit Node', upgradeCost: 115000, hashrateThs: 0.11, speedPerHour: 11 },
-  { level: 11, name: 'Fusion Node', upgradeCost: 150000, hashrateThs: 0.11, speedPerHour: 11 },
-  { level: 12, name: 'Quantum Core', upgradeCost: 200000, hashrateThs: 0.12, speedPerHour: 12 },
+  { level: 1, name: 'Basic Miner', upgradeCost: 0, hashrateThs: 0.10, speedPerHour: 5 },
+  { level: 2, name: 'Advanced Miner', upgradeCost: 100, hashrateThs: 0.10, speedPerHour: 5 },
+  { level: 3, name: 'Pro Rig', upgradeCost: 2000, hashrateThs: 0.10, speedPerHour: 5 },
+  { level: 4, name: 'Super Node', upgradeCost: 5000, hashrateThs: 0.10, speedPerHour: 5 },
+  { level: 5, name: 'Quantum Node', upgradeCost: 15000, hashrateThs: 0.10, speedPerHour: 5 },
+  { level: 6, name: 'Hyper Node', upgradeCost: 25000, hashrateThs: 0.10, speedPerHour: 5 },
+  { level: 7, name: 'Apex Rig', upgradeCost: 40000, hashrateThs: 0.11, speedPerHour: 5.5 },
+  { level: 8, name: 'Nova Rig', upgradeCost: 60000, hashrateThs: 0.11, speedPerHour: 5.5 },
+  { level: 9, name: 'Titan Node', upgradeCost: 85000, hashrateThs: 0.11, speedPerHour: 5.5 },
+  { level: 10, name: 'Orbit Node', upgradeCost: 115000, hashrateThs: 0.11, speedPerHour: 5.5 },
+  { level: 11, name: 'Fusion Node', upgradeCost: 150000, hashrateThs: 0.11, speedPerHour: 5.5 },
+  { level: 12, name: 'Quantum Core', upgradeCost: 200000, hashrateThs: 0.12, speedPerHour: 6 },
 ];
 
 export function getMiningLevel(level: number): MiningLevelConfig {

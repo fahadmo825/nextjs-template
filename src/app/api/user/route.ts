@@ -5,7 +5,8 @@ import { isTelegramRequestAuthorized } from '@/lib/telegram-auth';
 
 export const dynamic = 'force-dynamic';
 
-type UserPayload = { telegramId?: string; username?: string | null };
+type UserPayload = { telegramId?: string; telegram_id?: string; username?: string | null };
+type UserRow = { telegram_id: string; username: string | null; balance: string | number; mining_level: number; last_claim_time: string | number; wallet_address: string; created_at: string };
 
 function errorResponse(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -15,24 +16,45 @@ function validateTelegramId(value: unknown): value is string {
   return typeof value === 'string' && /^[0-9A-Za-z:_-]{1,128}$/.test(value);
 }
 
+async function getOrCreateUser(telegramId: string, username: string | null = null) {
+  const now = Date.now();
+  const rows = await sql`
+    INSERT INTO users (telegram_id, username, mining_level, last_claim_time)
+    VALUES (${telegramId}, ${username}, 1, ${now})
+    ON CONFLICT (telegram_id) DO UPDATE SET username = COALESCE(EXCLUDED.username, users.username)
+    RETURNING telegram_id, username, balance::text, mining_level, last_claim_time, wallet_address, created_at
+  `;
+  return rows[0] as UserRow;
+}
+
+function serializeUser(row: UserRow, now = Date.now()) {
+  const balance = Number(row.balance);
+  const miningLevel = Number(row.mining_level);
+  const lastClaimTime = Number(row.last_claim_time);
+  return {
+    ...row,
+    balance,
+    miningLevel,
+    lastClaimTime,
+    pendingEarnings: calculatePendingEarnings(lastClaimTime, miningLevel, now),
+  };
+}
+
+function getRequestTelegramId(request: Request) {
+  return new URL(request.url).searchParams.get('telegram_id');
+}
+
 export async function GET(request: Request) {
-  const telegramId = new URL(request.url).searchParams.get('telegram_id');
+  const telegramId = getRequestTelegramId(request);
   if (!validateTelegramId(telegramId)) return errorResponse('A valid telegram_id is required');
   if (!isTelegramRequestAuthorized(request.headers.get('x-telegram-init-data'), telegramId)) return errorResponse('Telegram authentication failed', 401);
+
   try {
     await ensureUsersTable();
     const username = new URL(request.url).searchParams.get('username');
-    const rows = await sql!`
-      INSERT INTO users (telegram_id, username, mining_level)
-      VALUES (${telegramId}, ${username}, 1)
-      ON CONFLICT (telegram_id) DO UPDATE SET username = COALESCE(EXCLUDED.username, users.username)
-      RETURNING telegram_id, username, balance::text, mining_level, last_claim_time, wallet_address, created_at
-    `;
-    const user = rows[0];
-    return NextResponse.json({
-      user: { ...user, balance: Number(user.balance), miningLevel: Number(user.mining_level), lastClaimTime: Number(user.last_claim_time), pendingEarnings: calculatePendingEarnings(Number(user.last_claim_time), Number(user.mining_level)) },
-      level: getMiningLevel(Number(user.mining_level)),
-    });
+    const row = await getOrCreateUser(telegramId, username);
+    const user = serializeUser(row);
+    return NextResponse.json({ user, level: getMiningLevel(user.miningLevel) });
   } catch (error) {
     console.error('Failed to load user', error);
     return errorResponse('Unable to load user data', 500);
@@ -42,39 +64,44 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   let body: UserPayload & { action?: 'claim' | 'wallet' | 'upgrade'; walletAddress?: string; level?: MiningLevel };
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON body'); }
-  if (!validateTelegramId(body.telegramId)) return errorResponse('A valid telegramId is required');
-  if (!isTelegramRequestAuthorized(request.headers.get('x-telegram-init-data'), body.telegramId)) return errorResponse('Telegram authentication failed', 401);
+
+  const telegramId = body.telegramId ?? body.telegram_id;
+  if (!validateTelegramId(telegramId)) return errorResponse('A valid telegramId is required');
+  if (!isTelegramRequestAuthorized(request.headers.get('x-telegram-init-data'), telegramId)) return errorResponse('Telegram authentication failed', 401);
 
   try {
     await ensureUsersTable();
+    await getOrCreateUser(telegramId, body.username ?? null);
+
     if (body.action === 'wallet') {
       if (typeof body.walletAddress !== 'string' || body.walletAddress.length > 255) return errorResponse('Invalid wallet address');
-      const rows = await sql!`UPDATE users SET wallet_address = ${body.walletAddress.trim()} WHERE telegram_id = ${body.telegramId} RETURNING wallet_address`;
-      if (!rows.length) return errorResponse('User not found', 404);
+      const rows = await sql`UPDATE users SET wallet_address = ${body.walletAddress.trim()} WHERE telegram_id = ${telegramId} RETURNING wallet_address`;
       return NextResponse.json({ walletAddress: rows[0].wallet_address });
     }
+
     if (body.action === 'upgrade') {
       const requestedLevel = body.level;
       if (typeof requestedLevel !== 'number' || !Number.isInteger(requestedLevel) || requestedLevel < 2 || requestedLevel > 12) return errorResponse('Invalid mining level');
       const target = getMiningLevel(requestedLevel);
-      const rows = await sql!`
+      const rows = await sql`
         UPDATE users SET balance = balance - ${target.upgradeCost}, mining_level = ${requestedLevel}
-        WHERE telegram_id = ${body.telegramId} AND mining_level = ${requestedLevel - 1} AND balance >= ${target.upgradeCost}
+        WHERE telegram_id = ${telegramId} AND mining_level = ${requestedLevel - 1} AND balance >= ${target.upgradeCost}
         RETURNING balance::text, mining_level
       `;
       if (!rows.length) return errorResponse('Insufficient balance or invalid upgrade', 409);
       return NextResponse.json({ balance: Number(rows[0].balance), miningLevel: Number(rows[0].mining_level) });
     }
+
     if (body.action !== 'claim') return errorResponse('Unsupported action');
     const now = Date.now();
-    const rows = await sql!`
+    const rows = await sql`
       UPDATE users
-      SET balance = balance + (((${now}::BIGINT - last_claim_time)::NUMERIC / 3600000) * CASE mining_level WHEN 1 THEN 10 WHEN 2 THEN 10 WHEN 3 THEN 10 WHEN 4 THEN 10 WHEN 5 THEN 10 WHEN 6 THEN 10 WHEN 7 THEN 11 WHEN 8 THEN 11 WHEN 9 THEN 11 WHEN 10 THEN 11 WHEN 11 THEN 11 WHEN 12 THEN 12 ELSE 10 END), last_claim_time = ${now}
-      WHERE telegram_id = ${body.telegramId}
-      RETURNING balance::text, mining_level, last_claim_time
+      SET balance = balance + (((${now}::BIGINT - last_claim_time)::NUMERIC / 3600000) * CASE mining_level WHEN 1 THEN 5 WHEN 2 THEN 5 WHEN 3 THEN 5 WHEN 4 THEN 5 WHEN 5 THEN 5 WHEN 6 THEN 5 WHEN 7 THEN 5.5 WHEN 8 THEN 5.5 WHEN 9 THEN 5.5 WHEN 10 THEN 5.5 WHEN 11 THEN 5.5 WHEN 12 THEN 6 ELSE 5 END), last_claim_time = ${now}
+      WHERE telegram_id = ${telegramId}
+      RETURNING telegram_id, username, balance::text, mining_level, last_claim_time, wallet_address, created_at
     `;
-    if (!rows.length) return errorResponse('User not found', 404);
-    return NextResponse.json({ balance: Number(rows[0].balance), miningLevel: Number(rows[0].mining_level), lastClaimTime: Number(rows[0].last_claim_time), pendingEarnings: 0 });
+    const user = serializeUser(rows[0] as UserRow, now);
+    return NextResponse.json({ user: { ...user, pendingEarnings: 0 }, balance: user.balance, miningLevel: user.miningLevel, lastClaimTime: user.lastClaimTime, pendingEarnings: 0 });
   } catch (error) {
     console.error('Failed to update user', error);
     return errorResponse('Unable to update user data', 500);
