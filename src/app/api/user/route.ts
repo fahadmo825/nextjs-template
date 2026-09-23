@@ -100,6 +100,7 @@ export async function POST(request: Request) {
       WHERE telegram_id = ${telegramId}
       RETURNING telegram_id, username, balance::text, mining_level, last_claim_time, wallet_address, created_at
     `;
+    if (!rows.length) return errorResponse('User not found', 404);
     const user = serializeUser(rows[0] as UserRow, now);
     return NextResponse.json({ user: { ...user, pendingEarnings: 0 }, balance: user.balance, miningLevel: user.miningLevel, lastClaimTime: user.lastClaimTime, pendingEarnings: 0 });
   } catch (error) {

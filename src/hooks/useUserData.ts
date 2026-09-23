@@ -2,7 +2,7 @@
 
 import { initData, useRawInitData, useSignal } from '@tma.js/sdk-react';
 import { useEffect, useState } from 'react';
-import { getMiningLevel, type MiningLevel } from '@/lib/mining';
+import { calculatePendingEarnings, getMiningLevel, type MiningLevel } from '@/lib/mining';
 
 export type UserData = {
   telegram_id: string;
@@ -67,10 +67,11 @@ export function useUserData() {
 
   useEffect(() => {
     if (!user) return;
-    const speedPerSecond = getMiningLevel(user.miningLevel).speedPerHour / 3600;
-    const timer = window.setInterval(() => setUnclaimedLive((current) => current + speedPerSecond), 1000);
+    const updateLiveEarnings = () => setUnclaimedLive(calculatePendingEarnings(user.lastClaimTime, user.miningLevel, Date.now()));
+    updateLiveEarnings();
+    const timer = window.setInterval(updateLiveEarnings, 1000);
     return () => window.clearInterval(timer);
-  }, [user?.miningLevel]);
+  }, [user?.lastClaimTime, user?.miningLevel]);
 
   async function post(action: 'claim' | 'wallet' | 'upgrade', payload: Record<string, unknown> = {}) {
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
