@@ -5,8 +5,8 @@ import { isTelegramRequestAuthorized } from '@/lib/telegram-auth';
 
 export const dynamic = 'force-dynamic';
 
-type UserPayload = { telegramId?: string; telegram_id?: string; username?: string | null };
-type UserRow = { telegram_id: string; username: string | null; balance: string | number; mining_level: number; last_claim_time: string | number; wallet_address: string; created_at: string };
+type UserPayload = { telegramId?: string; telegram_id?: string; username?: string | null; start_param?: string | null };
+type UserRow = { telegram_id: string; username: string | null; referral_count: number; balance: string | number; mining_level: number; last_claim_time: string | number; wallet_address: string; created_at: string };
 
 function errorResponse(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -22,7 +22,7 @@ async function getOrCreateUser(telegramId: string, username: string | null = nul
     INSERT INTO users (telegram_id, username, mining_level, last_claim_time)
     VALUES (${telegramId}, ${username}, 1, ${now})
     ON CONFLICT (telegram_id) DO UPDATE SET username = COALESCE(EXCLUDED.username, users.username)
-    RETURNING telegram_id, username, balance::text, mining_level, last_claim_time, wallet_address, created_at
+    RETURNING telegram_id, username, referral_count, balance::text, mining_level, last_claim_time, wallet_address, created_at
   `;
   return rows[0] as UserRow;
 }
@@ -71,7 +71,12 @@ export async function POST(request: Request) {
 
   try {
     await ensureUsersTable();
-    await getOrCreateUser(telegramId, body.username ?? null);
+    const existingUser = await getOrCreateUser(telegramId, body.username ?? null);
+
+    if (!body.action) {
+      const user = serializeUser(existingUser);
+      return NextResponse.json({ user, level: getMiningLevel(user.miningLevel) });
+    }
 
     if (body.action === 'wallet') {
       if (typeof body.walletAddress !== 'string' || body.walletAddress.length > 255) return errorResponse('Invalid wallet address');
@@ -98,7 +103,7 @@ export async function POST(request: Request) {
       UPDATE users
       SET balance = balance + (((${now}::BIGINT - last_claim_time)::NUMERIC / 3600000) * CASE mining_level WHEN 1 THEN 5 WHEN 2 THEN 5 WHEN 3 THEN 5 WHEN 4 THEN 5 WHEN 5 THEN 5 WHEN 6 THEN 5 WHEN 7 THEN 5.5 WHEN 8 THEN 5.5 WHEN 9 THEN 5.5 WHEN 10 THEN 5.5 WHEN 11 THEN 5.5 WHEN 12 THEN 6 ELSE 5 END), last_claim_time = ${now}
       WHERE telegram_id = ${telegramId}
-      RETURNING telegram_id, username, balance::text, mining_level, last_claim_time, wallet_address, created_at
+      RETURNING telegram_id, username, referral_count, balance::text, mining_level, last_claim_time, wallet_address, created_at
     `;
     if (!rows.length) return errorResponse('User not found', 404);
     const user = serializeUser(rows[0] as UserRow, now);

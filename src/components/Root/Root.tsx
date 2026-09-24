@@ -14,6 +14,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorPage } from '@/components/ErrorPage';
 import { useDidMount } from '@/hooks/useDidMount';
 import { setLocale } from '@/core/i18n/locale';
+import { TelegramIdentityProvider } from '@/hooks/useUserData';
 
 import './styles.css';
 
@@ -36,7 +37,7 @@ function RootInner({ children }: PropsWithChildren) {
           ['macos', 'ios'].includes(lp.tgWebAppPlatform) ? 'ios' : 'base'
         }
       >
-        {children}
+        <TelegramIdentityProvider>{children}</TelegramIdentityProvider>
       </AppRoot>
     </TonConnectUIProvider>
   );

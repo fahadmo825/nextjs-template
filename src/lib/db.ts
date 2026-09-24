@@ -10,11 +10,13 @@ export async function ensureUsersTable() {
       telegram_id VARCHAR PRIMARY KEY,
       username VARCHAR,
       balance NUMERIC NOT NULL DEFAULT 0,
+      referral_count INT NOT NULL DEFAULT 0,
       mining_level INT NOT NULL DEFAULT 1,
       last_claim_time BIGINT NOT NULL DEFAULT 0,
       wallet_address VARCHAR NOT NULL DEFAULT '',
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_count INT NOT NULL DEFAULT 0`;
   await sql`ALTER TABLE users ALTER COLUMN last_claim_time SET DEFAULT 0`;
 }
