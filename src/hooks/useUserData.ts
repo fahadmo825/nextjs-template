@@ -91,7 +91,7 @@ export function useUserData() {
   async function claim() {
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
     if (rawInitData) headers['x-telegram-init-data'] = rawInitData;
-    const response = await fetch('/api/user/claim', { method: 'POST', headers, body: JSON.stringify({ telegram_id: telegramId }) });
+    const response = await fetch('/api/user', { method: 'POST', headers, body: JSON.stringify({ telegram_id: telegramId, action: 'claim' }) });
     const data = await response.json() as PostResponse;
     if (!response.ok) throw new Error(data.error || 'Request failed');
     if (data.user) setUser(data.user);
